@@ -118,7 +118,9 @@ function calcAnnualNumber(birthday, targetYear, referenceDate = new Date()) {
   const referenceDay = referenceDate.getDate();
   const hasBirthdayPassed = referenceMonth > month || (referenceMonth === month && referenceDay >= day);
   const calculationYear = hasBirthdayPassed ? targetYear : targetYear - 1;
-  return digitRoot(calculationYear + month + day);
+  return String(calculationYear + month + day)
+    .split("")
+    .reduce((sum, digit) => sum + Number(digit), 0);
 }
 
 function calcAnnuals(birthday, referenceDate = new Date()) {
