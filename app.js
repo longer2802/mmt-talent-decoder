@@ -55,9 +55,9 @@ const PERSONALITY_TAG_RULES = [
 ];
 
 const WORK_TAG_RULES = [
-  { label: "開創宮", cards: [4, 7, 11, 15] },
-  { label: "守成宮", cards: [5, 8, 13, 17] },
-  { label: "變動宮", cards: [6, 9, 14, 18] },
+  { label: "開創工", cards: [4, 7, 11, 15] },
+  { label: "守成工", cards: [5, 8, 13, 17] },
+  { label: "變動工", cards: [6, 9, 14, 18] },
 ];
 
 const dom = {
@@ -115,9 +115,23 @@ function normalizeAnnuals(items) {
   return items.filter((item) => item !== "" && item != null).slice(0, 2);
 }
 
-function tagsForTalents(talents, rules) {
-  const cardSet = new Set(talents.map((card) => Number(card)));
-  return rules.filter((rule) => rule.cards.some((card) => cardSet.has(card))).map((rule) => rule.label);
+function countRuleMatches(talents, rules) {
+  const numericTalents = talents.map((card) => Number(card));
+  return rules.map((rule) => ({
+    label: rule.label,
+    count: numericTalents.filter((card) => rule.cards.includes(card)).length,
+  }));
+}
+
+function personalityTagsForTalents(talents) {
+  const counts = countRuleMatches(talents, PERSONALITY_TAG_RULES);
+  const maxCount = Math.max(...counts.map((item) => item.count));
+  if (!maxCount) return [];
+  return counts.filter((item) => item.count === maxCount).map((item) => item.label);
+}
+
+function workTagsForTalents(talents) {
+  return countRuleMatches(talents, WORK_TAG_RULES).map((item) => `${item.label} ${item.count} 顆`);
 }
 
 function renderTags(target, tags) {
@@ -343,8 +357,8 @@ function renderProfile(target, profile) {
     chip.textContent = card;
     talents.append(chip);
   });
-  renderTags(fragment.querySelector('[data-field="personalityTags"]'), tagsForTalents(profile.talents, PERSONALITY_TAG_RULES));
-  renderTags(fragment.querySelector('[data-field="workTags"]'), tagsForTalents(profile.talents, WORK_TAG_RULES));
+  renderTags(fragment.querySelector('[data-field="personalityTags"]'), personalityTagsForTalents(profile.talents));
+  renderTags(fragment.querySelector('[data-field="workTags"]'), workTagsForTalents(profile.talents));
 
   renderLife(
     profile,
