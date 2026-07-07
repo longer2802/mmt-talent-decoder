@@ -98,6 +98,10 @@ function formatList(items) {
   return items.length ? items.join("、") : "無";
 }
 
+function normalizeAnnuals(items) {
+  return items.filter((item) => item !== "" && item != null).slice(0, 2);
+}
+
 function visibleCases() {
   if (state.activeCategory === "全部") return state.cases;
   return state.cases.filter((item) => item.category === state.activeCategory);
@@ -406,7 +410,7 @@ function rowsToMatrixCases(rows, category) {
         talents: talents.flatMap(splitNumbers),
         mentors: mentors.flatMap(splitNumbers),
         shadows: shadows.flatMap(splitNumbers),
-        annuals: annuals.flatMap(splitNumbers),
+        annuals: normalizeAnnuals(annuals.flatMap(splitNumbers)),
       });
     }
   });
@@ -437,7 +441,7 @@ function rowsToRecordCases(rows, category) {
       talents: splitNumbers(get(row, ["天賦", "天賦牌", "天賦設計牌", "talents"])),
       mentors: splitNumbers(get(row, ["導師", "導師牌", "mentors"])),
       shadows: splitNumbers(get(row, ["陰影", "陰影牌", "shadows"])),
-      annuals: splitNumbers(get(row, ["流年", "流年牌", "annuals"])),
+      annuals: normalizeAnnuals(splitNumbers(get(row, ["流年", "流年牌", "annuals"]))),
     }))
     .filter((item) => item.name);
 }
