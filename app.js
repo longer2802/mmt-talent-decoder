@@ -2,6 +2,7 @@ const DEFAULT_SHEET_URL =
   "https://docs.google.com/spreadsheets/d/1jHr68XqBdlt8g6em86ut2rN8AWWXXMxFQE1uc96iDAE/edit?usp=drivesdk";
 
 const DEFAULT_CATEGORIES = ["家人", "艾格森", "凱基", "俊榮客戶", "房客", "朋友", "名人", "MMT"];
+const REQUIRED_CATEGORIES = ["家人", "艾格森", "凱基", "俊榮客戶", "房客", "朋友", "名人", "MMT"];
 
 const sampleCases = [
   {
@@ -229,12 +230,19 @@ function renderOptions() {
 
 function renderCategories() {
   dom.categoryTabs.innerHTML = "";
-  const counts = state.categories.reduce((acc, category) => {
+  const activeCategories = [
+    "全部",
+    ...state.categories
+      .filter((category) => category !== "全部")
+      .filter((category) => state.cases.some((item) => item.category === category) || REQUIRED_CATEGORIES.includes(category)),
+  ];
+  state.categories = [...new Set([...activeCategories, ...state.categories.filter((category) => !activeCategories.includes(category))])];
+  const counts = activeCategories.reduce((acc, category) => {
     acc[category] = category === "全部" ? state.cases.length : state.cases.filter((item) => item.category === category).length;
     return acc;
   }, {});
 
-  state.categories.forEach((category) => {
+  activeCategories.forEach((category) => {
     const button = document.createElement("button");
     button.type = "button";
     button.className = category === state.activeCategory ? "active" : "";
@@ -475,7 +483,10 @@ function loadRowsWithJsonp(sheetName) {
       const header = payload?.table?.cols?.map((column) => cleanValue(column.label)) || [];
       const body =
         payload?.table?.rows?.map((row) =>
-          row.c.map((entry) => cleanValue(entry?.f ?? entry?.v ?? ""))
+          Array.from({ length: Math.max(header.length, row.c?.length || 0) }, (_, index) => {
+            const entry = row.c?.[index];
+            return cleanValue(entry?.f ?? entry?.v ?? "");
+          })
         ) || [];
       resolve(header.some(Boolean) ? [header, ...body] : body);
     };
@@ -493,28 +504,45 @@ async function loadSheet() {
   dom.sourceStatus.textContent = "正在重新載入各分類...";
   dom.loadSheetButton.disabled = true;
   try {
-    const loaded = [];
+    const loadedByCategory = new Map();
     const failed = [];
 
     for (const category of DEFAULT_CATEGORIES) {
       try {
         const rows = await loadRowsWithJsonp(category);
         const cases = rowsToCases(rows, category);
-        if (cases.length) loaded.push(...cases);
+        if (cases.length) loadedByCategory.set(category, cases);
       } catch {
         failed.push(category);
       }
     }
 
-    if (!loaded.length) {
+    if (!loadedByCategory.size) {
       const rows = await loadRowsWithJsonp("");
-      loaded.push(...rowsToCases(rows, "家人"));
+      const cases = rowsToCases(rows, "家人");
+      if (cases.length) loadedByCategory.set("家人", cases);
+    }
+
+    const seen = new Set();
+    const loaded = [];
+    for (const [category, cases] of loadedByCategory) {
+      for (const profile of cases) {
+        const key = `${normalize(profile.name)}|${normalize(profile.birthday)}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        loaded.push({ ...profile, category });
+      }
     }
 
     if (!loaded.length) throw new Error("找不到個案資料");
 
     state.cases = loaded;
-    state.categories = ["全部", ...DEFAULT_CATEGORIES, ...state.categories.filter((item) => !["全部", ...DEFAULT_CATEGORIES].includes(item))];
+    state.categories = [
+      "全部",
+      ...DEFAULT_CATEGORIES,
+      ...[...loadedByCategory.keys()].filter((item) => !DEFAULT_CATEGORIES.includes(item)),
+      ...state.categories.filter((item) => !["全部", ...DEFAULT_CATEGORIES].includes(item)),
+    ];
     state.activeCategory = "全部";
     state.left = loaded[0];
     state.right = loaded[1] || loaded[0];
