@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>MMT 天賦設計解碼</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">MMT Talent Decoder</p>
+          <h1>天賦設計解碼</h1>
+        </div>
+        <div class="top-actions">
+          <button class="icon-button" id="loadSheetButton" type="button" aria-label="重新載入試算表" title="重新載入">
+            ↻
+          </button>
+        </div>
+      </header>
+
+      <section class="category-shell" aria-label="個案分類">
+        <div class="status-line" id="sourceStatus">正在載入試算表...</div>
+        <div class="category-tabs" id="categoryTabs"></div>
+        <form class="custom-category" id="customCategoryForm">
+          <input id="customCategoryInput" type="text" maxlength="16" placeholder="自行新增類別" />
+          <button type="submit">＋</button>
+        </form>
+      </section>
+
+      <section class="view-tools" aria-label="檢視控制">
+        <div class="zoom-tools">
+          <button id="zoomOutButton" type="button">－</button>
+          <span id="zoomLabel">100%</span>
+          <button id="zoomInButton" type="button">＋</button>
+        </div>
+        <button id="toggleRightButton" class="compare-toggle" type="button">打開右側對照</button>
+      </section>
+
+      <section class="compare-grid single-view" id="compareGrid" aria-label="個案左右對照">
+        <article class="profile-panel" data-side="left">
+          <div class="panel-head">
+            <span>左側個案</span>
+            <strong id="leftName">-</strong>
+          </div>
+          <div class="search-box">
+            <label for="leftSearch">搜尋姓名、生日或天賦牌</label>
+            <input id="leftSearch" list="caseOptions" autocomplete="off" placeholder="例如：俊榮 / 19901017 / 7" />
+          </div>
+          <div id="leftResult" class="profile-body"></div>
+        </article>
+
+        <article class="profile-panel" id="rightPanel" data-side="right">
+          <div class="panel-head">
+            <span>右側個案</span>
+            <strong id="rightName">-</strong>
+          </div>
+          <div class="search-box">
+            <label for="rightSearch">搜尋姓名、生日或天賦牌</label>
+            <input id="rightSearch" list="caseOptions" autocomplete="off" placeholder="選擇第二位個案對照" />
+          </div>
+          <div id="rightResult" class="profile-body"></div>
+        </article>
+      </section>
+
+      <datalist id="caseOptions"></datalist>
+    </main>
+
+    <template id="profileTemplate">
+      <section class="identity">
+        <div>
+          <span class="label">姓名</span>
+          <strong data-field="name"></strong>
+        </div>
+        <div>
+          <span class="label">生日</span>
+          <strong data-field="birthday"></strong>
+        </div>
+        <div>
+          <span class="label">分類</span>
+          <strong data-field="category"></strong>
+        </div>
+      </section>
+
+      <section class="element-block mystic-module">
+        <div class="section-title">風火水土</div>
+        <div class="element-orbits" data-field="elements"></div>
+      </section>
+
+      <section class="cards-block mystic-module">
+        <div class="section-title">天賦牌組</div>
+        <div class="chip-list" data-field="talents"></div>
+        <div class="mini-grid">
+          <div>
+            <span class="label">導師牌</span>
+            <strong data-field="mentors"></strong>
+          </div>
+          <div>
+            <span class="label">陰影牌</span>
+            <strong data-field="shadows"></strong>
+          </div>
+          <div>
+            <span class="label">流年牌</span>
+            <strong data-field="annuals"></strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="number-block mystic-module">
+        <div class="section-title">生命靈數金字塔</div>
+        <div class="life-caption" data-field="lifeCaption"></div>
+        <div class="life-pyramid" data-field="lifePyramid"></div>
+      </section>
+
+      <section class="note-block mystic-module">
+        <div class="section-title">個案備註</div>
+        <textarea data-field="notes" maxlength="1000" placeholder="可自行輸入備註，最多 1000 字"></textarea>
+        <div class="note-counter" data-field="noteCounter">0 / 1000</div>
+      </section>
+    </template>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
