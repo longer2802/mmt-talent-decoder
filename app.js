@@ -361,7 +361,7 @@ function renderProfile(target, profile) {
     fragment.querySelector('[data-field="personalityTags"]'),
     personalityTagsForTalents([...profile.talents, ...profile.mentors])
   );
-  renderTags(fragment.querySelector('[data-field="workTags"]'), workTagsForTalents(profile.talents));
+  renderTags(fragment.querySelector('[data-field="workTags"]'), workTagsForTalents([...profile.talents, ...profile.mentors]));
 
   renderLife(
     profile,
