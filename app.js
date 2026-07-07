@@ -276,7 +276,7 @@ function renderLife(profile, target, caption) {
     createTriangle("top-triangle", life.R, life.Q, life.P),
     createTriangle("left-triangle", life.S, life.X, life.W),
     createLine("center-main", [life.O], "major"),
-    createTriangle("right-triangle", life.V, life.U, life.T),
+    createTriangle("right-triangle", life.T, life.U, life.V),
     createLine("middle-line", [life.M, life.N], "core"),
     createLine("lower-line", [life.I, life.J, life.K, life.L], "soft"),
     createLine("base-line", [life.A, life.B, life.C, life.D, life.E, life.F, life.G, life.H], "base")
