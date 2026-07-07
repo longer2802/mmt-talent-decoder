@@ -55,9 +55,9 @@ const PERSONALITY_TAG_RULES = [
 ];
 
 const WORK_TAG_RULES = [
-  { label: "開創工", cards: [4, 7, 11, 15] },
-  { label: "守成工", cards: [5, 8, 13, 17] },
-  { label: "變動工", cards: [6, 9, 14, 18] },
+  { label: "開創宮", cards: [4, 7, 11, 15] },
+  { label: "守成宮", cards: [5, 8, 13, 17] },
+  { label: "變動宮", cards: [6, 9, 14, 18] },
 ];
 
 const dom = {
@@ -357,7 +357,10 @@ function renderProfile(target, profile) {
     chip.textContent = card;
     talents.append(chip);
   });
-  renderTags(fragment.querySelector('[data-field="personalityTags"]'), personalityTagsForTalents(profile.talents));
+  renderTags(
+    fragment.querySelector('[data-field="personalityTags"]'),
+    personalityTagsForTalents([...profile.talents, ...profile.mentors])
+  );
   renderTags(fragment.querySelector('[data-field="workTags"]'), workTagsForTalents(profile.talents));
 
   renderLife(
