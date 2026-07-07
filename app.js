@@ -47,6 +47,19 @@ const elementMeta = {
   earth: { label: "土", symbol: "土", color: "#d9b76f" },
 };
 
+const PERSONALITY_TAG_RULES = [
+  { label: "高敏感", cards: [2, 9, 12, 17, 18, 20] },
+  { label: "高自尊", cards: [4, 5, 8, 15, 16, 19] },
+  { label: "高標準", cards: [3, 4, 7, 11, 16, 21] },
+  { label: "高自由", cards: [0, 1, 3, 6, 10, 13, 14] },
+];
+
+const WORK_TAG_RULES = [
+  { label: "開創宮", cards: [4, 7, 11, 15] },
+  { label: "守成宮", cards: [5, 8, 13, 17] },
+  { label: "變動宮", cards: [6, 9, 14, 18] },
+];
+
 const dom = {
   loadSheetButton: document.querySelector("#loadSheetButton"),
   zoomOutButton: document.querySelector("#zoomOutButton"),
@@ -100,6 +113,28 @@ function formatList(items) {
 
 function normalizeAnnuals(items) {
   return items.filter((item) => item !== "" && item != null).slice(0, 2);
+}
+
+function tagsForTalents(talents, rules) {
+  const cardSet = new Set(talents.map((card) => Number(card)));
+  return rules.filter((rule) => rule.cards.some((card) => cardSet.has(card))).map((rule) => rule.label);
+}
+
+function renderTags(target, tags) {
+  target.innerHTML = "";
+  if (!tags.length) {
+    const empty = document.createElement("span");
+    empty.className = "tag-pill muted";
+    empty.textContent = "未符合";
+    target.append(empty);
+    return;
+  }
+  tags.forEach((tag) => {
+    const pill = document.createElement("span");
+    pill.className = "tag-pill";
+    pill.textContent = tag;
+    target.append(pill);
+  });
 }
 
 function visibleCases() {
@@ -308,6 +343,8 @@ function renderProfile(target, profile) {
     chip.textContent = card;
     talents.append(chip);
   });
+  renderTags(fragment.querySelector('[data-field="personalityTags"]'), tagsForTalents(profile.talents, PERSONALITY_TAG_RULES));
+  renderTags(fragment.querySelector('[data-field="workTags"]'), tagsForTalents(profile.talents, WORK_TAG_RULES));
 
   renderLife(
     profile,
