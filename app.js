@@ -3,6 +3,9 @@ const DEFAULT_SHEET_URL =
 
 const DEFAULT_CATEGORIES = ["家人", "艾格森", "凱基", "俊榮客戶", "房客", "朋友", "名人", "MMT"];
 const REQUIRED_CATEGORIES = ["家人", "艾格森", "凱基", "俊榮客戶", "房客", "朋友", "名人", "MMT"];
+const SHEET_NAME_BY_CATEGORY = {
+  MMT: "ＭＭＴ",
+};
 
 const sampleCases = [
   {
@@ -509,7 +512,7 @@ async function loadSheet() {
 
     for (const category of DEFAULT_CATEGORIES) {
       try {
-        const rows = await loadRowsWithJsonp(category);
+        const rows = await loadRowsWithJsonp(SHEET_NAME_BY_CATEGORY[category] || category);
         const cases = rowsToCases(rows, category);
         if (cases.length) loadedByCategory.set(category, cases);
       } catch {
