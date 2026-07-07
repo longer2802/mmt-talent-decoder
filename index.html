@@ -9,9 +9,14 @@
   <body>
     <main class="app-shell">
       <header class="topbar">
-        <div>
-          <p class="eyebrow">MMT Talent Decoder</p>
-          <h1>天賦設計解碼</h1>
+        <div class="brand-lockup">
+          <div class="brand-mark" aria-hidden="true">
+            <span>MMT</span>
+          </div>
+          <div>
+            <p class="eyebrow">Talent Decoder</p>
+            <h1>天賦設計解碼</h1>
+          </div>
         </div>
         <div class="top-actions">
           <button class="icon-button" id="loadSheetButton" type="button" aria-label="重新載入試算表" title="重新載入">
@@ -21,7 +26,7 @@
       </header>
 
       <section class="category-shell" aria-label="個案分類">
-        <div class="status-line" id="sourceStatus">正在載入試算表...</div>
+        <div class="status-line"><span></span><strong id="sourceStatus">正在載入試算表...</strong></div>
         <div class="category-tabs" id="categoryTabs"></div>
         <form class="custom-category" id="customCategoryForm">
           <input id="customCategoryInput" type="text" maxlength="16" placeholder="自行新增類別" />
