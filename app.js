@@ -16,7 +16,6 @@ const sampleCases = [
     talents: [2, 3, 4],
     mentors: [7],
     shadows: [16],
-    annuals: [13, 14],
   },
   {
     name: "佩妤",
@@ -26,7 +25,6 @@ const sampleCases = [
     talents: [7, 9, 11],
     mentors: [9],
     shadows: [18],
-    annuals: [11, 12],
   },
 ];
 
@@ -111,8 +109,23 @@ function formatList(items) {
   return items.length ? items.join("、") : "無";
 }
 
-function normalizeAnnuals(items) {
-  return items.filter((item) => item !== "" && item != null).slice(0, 2);
+function calcAnnualNumber(birthday, targetYear, referenceDate = new Date()) {
+  const parsed = parseBirthday(birthday);
+  if (!parsed) return null;
+  const month = Number(parsed.month);
+  const day = Number(parsed.day);
+  const referenceMonth = referenceDate.getMonth() + 1;
+  const referenceDay = referenceDate.getDate();
+  const hasBirthdayPassed = referenceMonth > month || (referenceMonth === month && referenceDay >= day);
+  const calculationYear = hasBirthdayPassed ? targetYear : targetYear - 1;
+  return digitRoot(calculationYear + month + day);
+}
+
+function calcAnnuals(birthday, referenceDate = new Date()) {
+  const currentYear = referenceDate.getFullYear();
+  return [currentYear, currentYear + 1]
+    .map((year) => calcAnnualNumber(birthday, year, referenceDate))
+    .filter((item) => item !== null);
 }
 
 function countRuleMatches(talents, rules) {
@@ -332,7 +345,7 @@ function renderProfile(target, profile) {
   fragment.querySelector('[data-field="category"]').textContent = profile.category || "未分類";
   fragment.querySelector('[data-field="mentors"]').textContent = formatList(profile.mentors);
   fragment.querySelector('[data-field="shadows"]').textContent = formatList(profile.shadows);
-  fragment.querySelector('[data-field="annuals"]').textContent = formatList(profile.annuals);
+  fragment.querySelector('[data-field="annuals"]').textContent = formatList(calcAnnuals(profile.birthday));
 
   const elements = fragment.querySelector('[data-field="elements"]');
   Object.entries(elementMeta).forEach(([key, meta], index) => {
@@ -449,8 +462,6 @@ function rowsToMatrixCases(rows, category) {
       const talents = collectSection(blockRows, column, "天賦", ["導師", "陰影", "流年", "生命靈數", "備註", "姓名"]);
       const mentors = collectSection(blockRows, column, "導師", ["陰影", "流年", "生命靈數", "備註", "姓名"]);
       const shadows = collectSection(blockRows, column, "陰影", ["流年", "生命靈數", "備註", "姓名"]);
-      const annuals = collectSection(blockRows, column, "流年", ["生命靈數", "備註", "姓名"]);
-
       cases.push({
         name,
         birthday: cell(birthdayRow, column),
@@ -464,7 +475,6 @@ function rowsToMatrixCases(rows, category) {
         talents: talents.flatMap(splitNumbers),
         mentors: mentors.flatMap(splitNumbers),
         shadows: shadows.flatMap(splitNumbers),
-        annuals: normalizeAnnuals(annuals.flatMap(splitNumbers)),
       });
     }
   });
@@ -495,7 +505,6 @@ function rowsToRecordCases(rows, category) {
       talents: splitNumbers(get(row, ["天賦", "天賦牌", "天賦設計牌", "talents"])),
       mentors: splitNumbers(get(row, ["導師", "導師牌", "mentors"])),
       shadows: splitNumbers(get(row, ["陰影", "陰影牌", "shadows"])),
-      annuals: normalizeAnnuals(splitNumbers(get(row, ["流年", "流年牌", "annuals"]))),
     }))
     .filter((item) => item.name);
 }
