@@ -525,15 +525,27 @@ textarea:focus {
 
 .life-pyramid {
   position: relative;
-  min-width: 260px;
-  padding: 12px 0 6px;
-  overflow-x: auto;
+  --pyramid-side: 82px;
+  --pyramid-center: 38px;
+  --pyramid-col-gap: 10px;
+  --pyramid-row-gap: 7px;
+  --node-size: 21px;
+  --major-size: 26px;
+  --cluster-min: 54px;
+  --cluster-pad: 4px;
+  --middle-gap: 64px;
+  --lower-gap: 18px;
+  --wing-offset: 6px;
+  width: 100%;
+  min-width: 0;
+  padding: 10px 0 6px;
+  overflow-x: hidden;
   scrollbar-width: thin;
 }
 
 .pyramid-stage {
   display: grid;
-  grid-template-columns: 88px 44px 88px;
+  grid-template-columns: var(--pyramid-side) var(--pyramid-center) var(--pyramid-side);
   grid-template-areas:
     ". top ."
     "left center right"
@@ -542,16 +554,16 @@ textarea:focus {
     ". base .";
   justify-content: center;
   align-items: center;
-  gap: 8px 14px;
-  width: max-content;
+  gap: var(--pyramid-row-gap) var(--pyramid-col-gap);
+  width: 100%;
   min-width: 100%;
   margin-inline: auto;
 }
 
 .pyramid-node {
   display: grid;
-  min-width: 23px;
-  min-height: 23px;
+  min-width: var(--node-size);
+  min-height: var(--node-size);
   place-items: center;
   border: 0;
   border-radius: 6px;
@@ -563,8 +575,8 @@ textarea:focus {
 }
 
 .pyramid-node.major {
-  min-width: 28px;
-  min-height: 28px;
+  min-width: var(--major-size);
+  min-height: var(--major-size);
   background: linear-gradient(135deg, var(--brand), var(--wind));
   color: #ffffff;
   box-shadow: 0 5px 12px rgba(22, 90, 153, 0.18);
@@ -591,11 +603,11 @@ textarea:focus {
   position: relative;
   display: grid;
   gap: 3px;
-  min-height: 58px;
+  min-height: var(--cluster-min);
   align-content: center;
   border: 1px solid rgba(36, 103, 169, 0.18);
   border-radius: 8px;
-  padding: 5px;
+  padding: var(--cluster-pad);
 }
 
 .tri-cluster::before {
@@ -625,13 +637,13 @@ textarea:focus {
 .left-triangle {
   grid-area: left;
   justify-self: start;
-  transform: translateX(-10px);
+  transform: translateX(calc(-1 * var(--wing-offset)));
 }
 
 .right-triangle {
   grid-area: right;
   justify-self: end;
-  transform: translateX(10px);
+  transform: translateX(var(--wing-offset));
 }
 
 .center-main {
@@ -641,12 +653,12 @@ textarea:focus {
 
 .middle-line {
   grid-area: middle;
-  gap: 74px;
+  gap: var(--middle-gap);
 }
 
 .lower-line {
   grid-area: lower;
-  gap: 22px;
+  gap: var(--lower-gap);
 }
 
 .base-line {
@@ -667,17 +679,17 @@ textarea:focus {
 }
 
 @media (max-width: 500px) {
-  .pyramid-stage {
-    grid-template-columns: 84px 38px 84px;
-    gap: 7px 10px;
-  }
-
-  .left-triangle {
-    transform: translateX(-8px);
-  }
-
-  .right-triangle {
-    transform: translateX(8px);
+  .life-pyramid {
+    --pyramid-side: 76px;
+    --pyramid-center: 34px;
+    --pyramid-col-gap: 8px;
+    --pyramid-row-gap: 6px;
+    --node-size: 20px;
+    --major-size: 25px;
+    --cluster-min: 50px;
+    --middle-gap: 56px;
+    --lower-gap: 16px;
+    --wing-offset: 4px;
   }
 }
 
@@ -741,7 +753,18 @@ textarea:focus {
   }
 
   .compare-grid:not(.single-view) .life-pyramid {
-    min-width: 250px;
+    --pyramid-side: 52px;
+    --pyramid-center: 26px;
+    --pyramid-col-gap: 4px;
+    --pyramid-row-gap: 5px;
+    --node-size: 17px;
+    --major-size: 22px;
+    --cluster-min: 46px;
+    --cluster-pad: 3px;
+    --middle-gap: 42px;
+    --lower-gap: 11px;
+    --wing-offset: 1px;
+    padding-top: 8px;
   }
 
   .compare-grid:not(.single-view) {
