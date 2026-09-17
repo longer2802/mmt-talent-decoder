@@ -71,7 +71,6 @@ const dom = {
   categoryTabs: document.querySelector("#categoryTabs"),
   customCategoryForm: document.querySelector("#customCategoryForm"),
   customCategoryInput: document.querySelector("#customCategoryInput"),
-  caseOptions: document.querySelector("#caseOptions"),
   leftSearch: document.querySelector("#leftSearch"),
   rightSearch: document.querySelector("#rightSearch"),
   leftName: document.querySelector("#leftName"),
@@ -337,16 +336,6 @@ function noteKey(profile) {
   return `mmt-note:${profile.category}:${profile.name}:${profile.birthday}`;
 }
 
-function renderOptions() {
-  dom.caseOptions.innerHTML = "";
-  visibleCases().forEach((item) => {
-    const option = document.createElement("option");
-    option.value = item.name;
-    option.label = `${item.category}｜${item.name} ${item.birthday || ""} 天賦 ${formatList(item.talents)}`;
-    dom.caseOptions.append(option);
-  });
-}
-
 function renderCategories() {
   dom.categoryTabs.innerHTML = "";
   const activeCategories = [
@@ -427,6 +416,20 @@ function renderSearchResults(target, query, side) {
   target.append(wrap);
 }
 
+function renderSearchPane(side) {
+  const target = side === "left" ? dom.leftResult : dom.rightResult;
+  const nameTarget = side === "left" ? dom.leftName : dom.rightName;
+  const profile = state[side];
+  const query = state[`${side}Query`];
+
+  nameTarget.textContent = profile?.name || "-";
+  if (profile) {
+    renderProfile(target, profile);
+  } else {
+    renderSearchResults(target, query, side);
+  }
+}
+
 function renderProfile(target, profile) {
   target.innerHTML = "";
   if (!profile) {
@@ -494,22 +497,11 @@ function renderProfile(target, profile) {
 
 function render() {
   renderCategories();
-  renderOptions();
   renderViewControls();
-  dom.leftName.textContent = state.left?.name || "-";
-  dom.rightName.textContent = state.right?.name || "-";
   dom.leftSearch.value = state.leftQuery || "";
   dom.rightSearch.value = state.rightQuery || "";
-  if (state.left) {
-    renderProfile(dom.leftResult, state.left);
-  } else {
-    renderSearchResults(dom.leftResult, state.leftQuery, "left");
-  }
-  if (state.right) {
-    renderProfile(dom.rightResult, state.right);
-  } else {
-    renderSearchResults(dom.rightResult, state.rightQuery, "right");
-  }
+  renderSearchPane("left");
+  renderSearchPane("right");
 }
 
 function renderViewControls() {
@@ -742,8 +734,7 @@ function bindSearch(input, side) {
     const query = cleanValue(input.value);
     state[`${side}Query`] = query;
     state[side] = null;
-    render();
-    input.focus();
+    renderSearchPane(side);
   };
 
   input.addEventListener("compositionstart", () => {
