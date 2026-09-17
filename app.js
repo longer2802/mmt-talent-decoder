@@ -32,8 +32,10 @@ const state = {
   cases: [...sampleCases],
   categories: ["全部", ...DEFAULT_CATEGORIES],
   activeCategory: "全部",
-  left: sampleCases[0],
-  right: sampleCases[1],
+  left: null,
+  right: null,
+  leftQuery: "",
+  rightQuery: "",
   rightVisible: false,
   zoom: 1,
 };
@@ -184,6 +186,52 @@ function findCase(query) {
   );
 }
 
+function caseMatches(item, query) {
+  const text = normalize(query);
+  if (!text) return false;
+
+  const name = normalize(item.name);
+  const birthday = normalize(item.birthday);
+  const category = normalize(item.category);
+  const talents = item.talents.map((card) => String(card));
+  const mentors = item.mentors.map((card) => String(card));
+  const shadows = item.shadows.map((card) => String(card));
+  const allCards = [...talents, ...mentors, ...shadows];
+  const digits = text.replace(/\D/g, "");
+
+  const singleCharNameMatch =
+    [...text].length === 1 && [...name].length > 1 ? name.startsWith(text) || name.endsWith(text) : false;
+
+  return (
+    name.includes(text) ||
+    singleCharNameMatch ||
+    birthday.includes(text) ||
+    (digits.length > 0 && birthday.includes(digits)) ||
+    category.includes(text) ||
+    allCards.some((card) => card === text || card.includes(text))
+  );
+}
+
+function searchCases(query) {
+  const text = cleanValue(query);
+  if (!text) return [];
+  return visibleCases()
+    .filter((item) => caseMatches(item, text))
+    .sort((a, b) => {
+      const aName = normalize(a.name);
+      const bName = normalize(b.name);
+      const q = normalize(text);
+      const score = (item, name) => {
+        if (name === q) return 0;
+        if (name.startsWith(q)) return 1;
+        if (normalize(item.birthday) === q) return 2;
+        if (normalize(item.category) === q) return 3;
+        return 4;
+      };
+      return score(a, aName) - score(b, bName) || aName.localeCompare(bName, "zh-Hant");
+    });
+}
+
 function parseBirthday(raw) {
   const digits = cleanValue(raw).replace(/\D/g, "");
   if (digits.length < 8) return null;
@@ -320,15 +368,63 @@ function renderCategories() {
     button.textContent = `${category} ${counts[category] || 0}`;
     button.addEventListener("click", () => {
       state.activeCategory = category;
-      const cases = visibleCases();
-      if (cases.length) {
-        state.left = cases[0];
-        state.right = cases[1] || cases[0];
-      }
+      state.left = null;
+      state.right = null;
+      state.leftQuery = "";
+      state.rightQuery = "";
       render();
     });
     dom.categoryTabs.append(button);
   });
+}
+
+function renderSearchResults(target, query, side) {
+  target.innerHTML = "";
+  const text = cleanValue(query);
+  if (!text) {
+    const empty = document.createElement("div");
+    empty.className = "empty-state";
+    empty.textContent = "請輸入姓名、生日、分類或天賦牌關鍵字";
+    target.append(empty);
+    return;
+  }
+
+  const matches = searchCases(text);
+  if (!matches.length) {
+    const empty = document.createElement("div");
+    empty.className = "empty-state";
+    empty.textContent = `找不到「${text}」相關個案`;
+    target.append(empty);
+    return;
+  }
+
+  const wrap = document.createElement("div");
+  wrap.className = "search-results";
+  const title = document.createElement("div");
+  title.className = "search-result-title";
+  title.textContent = `找到 ${matches.length} 位個案`;
+  wrap.append(title);
+
+  matches.forEach((profile) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "search-result-card";
+    button.innerHTML = `
+      <span>
+        <strong>${profile.name}</strong>
+        <small>${profile.category || "未分類"}｜${profile.birthday || "未填生日"}</small>
+      </span>
+      <em>天賦 ${formatList(profile.talents)}</em>
+    `;
+    button.addEventListener("click", () => {
+      state[side] = profile;
+      state[`${side}Query`] = profile.name;
+      render();
+    });
+    wrap.append(button);
+  });
+
+  target.append(wrap);
 }
 
 function renderProfile(target, profile) {
@@ -402,10 +498,18 @@ function render() {
   renderViewControls();
   dom.leftName.textContent = state.left?.name || "-";
   dom.rightName.textContent = state.right?.name || "-";
-  dom.leftSearch.value = state.left?.name || "";
-  dom.rightSearch.value = state.right?.name || "";
-  renderProfile(dom.leftResult, state.left);
-  renderProfile(dom.rightResult, state.right);
+  dom.leftSearch.value = state.leftQuery || "";
+  dom.rightSearch.value = state.rightQuery || "";
+  if (state.left) {
+    renderProfile(dom.leftResult, state.left);
+  } else {
+    renderSearchResults(dom.leftResult, state.leftQuery, "left");
+  }
+  if (state.right) {
+    renderProfile(dom.rightResult, state.right);
+  } else {
+    renderSearchResults(dom.rightResult, state.rightQuery, "right");
+  }
 }
 
 function renderViewControls() {
@@ -616,14 +720,14 @@ async function loadSheet() {
       ...state.categories.filter((item) => !["全部", ...DEFAULT_CATEGORIES].includes(item)),
     ];
     state.activeCategory = "全部";
-    state.left = loaded[0];
-    state.right = loaded[1] || loaded[0];
+    state.left = null;
+    state.right = null;
     dom.sourceStatus.textContent = `已載入 ${loaded.length} 位個案${failed.length ? `，${failed.join("、")} 尚未讀到` : ""}`;
     render();
   } catch (error) {
     state.cases = [...sampleCases];
-    state.left = state.cases[0];
-    state.right = state.cases[1];
+    state.left = null;
+    state.right = null;
     dom.sourceStatus.textContent = `載入失敗：${error.message}。目前先顯示示範資料。`;
     render();
   } finally {
@@ -634,21 +738,12 @@ async function loadSheet() {
 function bindSearch(input, side) {
   let composing = false;
   let timer = 0;
-  const applySearch = (allowPartial = false) => {
+  const applySearch = () => {
     const query = cleanValue(input.value);
-    if (!query) return;
-    const profile = findCase(query);
-    const exact =
-      profile &&
-      (normalize(profile.name) === normalize(query) ||
-        normalize(profile.birthday) === normalize(query) ||
-        String(profile.talents.join(" ")).split(" ").includes(query));
-
-    if (profile && (exact || allowPartial || query.length >= 2 || /^\d{2,}$/.test(query))) {
-      state[side] = profile;
-      render();
-      input.focus();
-    }
+    state[`${side}Query`] = query;
+    state[side] = null;
+    render();
+    input.focus();
   };
 
   input.addEventListener("compositionstart", () => {
@@ -658,22 +753,22 @@ function bindSearch(input, side) {
   input.addEventListener("compositionend", () => {
     composing = false;
     window.clearTimeout(timer);
-    timer = window.setTimeout(() => applySearch(false), 160);
+    timer = window.setTimeout(() => applySearch(), 120);
   });
 
   input.addEventListener("input", () => {
     if (composing) return;
     window.clearTimeout(timer);
-    timer = window.setTimeout(() => applySearch(false), 220);
+    timer = window.setTimeout(() => applySearch(), 160);
   });
 
   input.addEventListener("change", () => {
-    applySearch(true);
+    applySearch();
   });
 
   input.addEventListener("keydown", (event) => {
     if (event.key === "Enter") {
-      applySearch(true);
+      applySearch();
     }
   });
 }

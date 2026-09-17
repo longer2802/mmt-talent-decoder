@@ -393,6 +393,62 @@ textarea:focus {
   text-align: center;
 }
 
+.search-results {
+  display: grid;
+  gap: 8px;
+}
+
+.search-result-title {
+  color: var(--muted);
+  font-size: 0.78em;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.search-result-card {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(58, 133, 203, 0.18);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--ink);
+  box-shadow: 0 8px 20px rgba(26, 83, 139, 0.08);
+  text-align: left;
+}
+
+.search-result-card strong,
+.search-result-card small,
+.search-result-card em {
+  display: block;
+  letter-spacing: 0;
+}
+
+.search-result-card strong {
+  color: var(--brand-strong);
+  font-size: 1.04em;
+  font-weight: 950;
+}
+
+.search-result-card small {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 0.78em;
+  font-weight: 750;
+}
+
+.search-result-card em {
+  flex: 0 0 auto;
+  color: var(--brand);
+  font-size: 0.74em;
+  font-style: normal;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
 .identity {
   display: grid;
   grid-template-columns: 1fr;
