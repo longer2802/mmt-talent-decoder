@@ -113,25 +113,33 @@ function formatList(items) {
   return items.length ? items.join("、") : "無";
 }
 
-function calcAnnualNumber(birthday, targetYear, referenceDate = new Date()) {
+function calcAnnualPeriod(birthday, referenceDate = new Date()) {
   const parsed = parseBirthday(birthday);
   if (!parsed) return null;
+
   const month = Number(parsed.month);
   const day = Number(parsed.day);
+  const currentYear = referenceDate.getFullYear();
   const referenceMonth = referenceDate.getMonth() + 1;
   const referenceDay = referenceDate.getDate();
   const hasBirthdayPassed = referenceMonth > month || (referenceMonth === month && referenceDay >= day);
-  const calculationYear = hasBirthdayPassed ? targetYear : targetYear - 1;
-  return String(calculationYear + month + day)
+  const startYear = hasBirthdayPassed ? currentYear : currentYear - 1;
+  const annualNumber = String(startYear + month + day)
     .split("")
     .reduce((sum, digit) => sum + Number(digit), 0);
+
+  const pad = (value) => String(value).padStart(2, "0");
+  return {
+    annualNumber,
+    start: `${startYear}/${pad(month)}/${pad(day)}`,
+    end: `${startYear + 1}/${pad(month)}/${pad(day)}`,
+  };
 }
 
-function calcAnnuals(birthday, referenceDate = new Date()) {
-  const currentYear = referenceDate.getFullYear();
-  return [currentYear, currentYear + 1]
-    .map((year) => calcAnnualNumber(birthday, year, referenceDate))
-    .filter((item) => item !== null);
+function formatAnnualPeriod(birthday, referenceDate = new Date()) {
+  const period = calcAnnualPeriod(birthday, referenceDate);
+  if (!period) return "生日資料不足";
+  return `${period.annualNumber}（${period.start}－${period.end}）`;
 }
 
 function countRuleMatches(talents, rules) {
@@ -450,7 +458,7 @@ function renderProfile(target, profile) {
   fragment.querySelector('[data-field="category"]').textContent = profile.category || "未分類";
   fragment.querySelector('[data-field="mentors"]').textContent = formatList(profile.mentors);
   fragment.querySelector('[data-field="shadows"]').textContent = formatList(profile.shadows);
-  fragment.querySelector('[data-field="annuals"]').textContent = formatList(calcAnnuals(profile.birthday));
+  fragment.querySelector('[data-field="annuals"]').textContent = formatAnnualPeriod(profile.birthday);
 
   const elements = fragment.querySelector('[data-field="elements"]');
   Object.entries(elementMeta).forEach(([key, meta], index) => {
