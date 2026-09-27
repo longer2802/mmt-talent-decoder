@@ -199,7 +199,11 @@ function caseMatches(item, query) {
   const mentors = item.mentors.map((card) => String(card));
   const shadows = item.shadows.map((card) => String(card));
   const allCards = [...talents, ...mentors, ...shadows];
-  const digits = text.replace(/\D/g, "");
+  const isNumericQuery = /^\d+$/.test(text);
+
+  if (isNumericQuery) {
+    return name.includes(text) || birthday.includes(text) || talents.some((card) => card.includes(text));
+  }
 
   const singleCharNameMatch =
     [...text].length === 1 && [...name].length > 1 ? name.startsWith(text) || name.endsWith(text) : false;
@@ -208,7 +212,6 @@ function caseMatches(item, query) {
     name.includes(text) ||
     singleCharNameMatch ||
     birthday.includes(text) ||
-    (digits.length > 0 && birthday.includes(digits)) ||
     category.includes(text) ||
     allCards.some((card) => card === text || card.includes(text))
   );
@@ -373,19 +376,11 @@ function renderCategories() {
 function renderSearchResults(target, query, side) {
   target.innerHTML = "";
   const text = cleanValue(query);
-  if (!text) {
-    const empty = document.createElement("div");
-    empty.className = "empty-state";
-    empty.textContent = "請輸入姓名、生日、分類或天賦牌關鍵字";
-    target.append(empty);
-    return;
-  }
-
-  const matches = searchCases(text);
+  const matches = text ? searchCases(text) : visibleCases();
   if (!matches.length) {
     const empty = document.createElement("div");
     empty.className = "empty-state";
-    empty.textContent = `找不到「${text}」相關個案`;
+    empty.textContent = text ? `找不到「${text}」相關個案` : `${state.activeCategory}目前沒有個案`;
     target.append(empty);
     return;
   }
@@ -394,7 +389,9 @@ function renderSearchResults(target, query, side) {
   wrap.className = "search-results";
   const title = document.createElement("div");
   title.className = "search-result-title";
-  title.textContent = `找到 ${matches.length} 位個案`;
+  title.textContent = text
+    ? `找到 ${matches.length} 位個案`
+    : `${state.activeCategory === "全部" ? "全部" : state.activeCategory}個案 ${matches.length} 位`;
   wrap.append(title);
 
   matches.forEach((profile) => {
