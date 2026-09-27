@@ -1,5 +1,6 @@
 const DEFAULT_SHEET_URL =
   "https://docs.google.com/spreadsheets/d/1jHr68XqBdlt8g6em86ut2rN8AWWXXMxFQE1uc96iDAE/edit?usp=drivesdk";
+const AUTO_SYNC_INTERVAL_MS = 60 * 1000;
 
 const DEFAULT_CATEGORIES = ["家人", "艾格森", "凱基", "俊榮客戶", "房客", "朋友", "名人", "MMT"];
 const REQUIRED_CATEGORIES = ["家人", "艾格森", "凱基", "俊榮客戶", "房客", "朋友", "名人", "MMT"];
@@ -38,6 +39,8 @@ const state = {
   rightQuery: "",
   rightVisible: false,
   zoom: 1,
+  isSyncing: false,
+  lastSyncedAt: null,
 };
 
 const elementMeta = {
@@ -618,6 +621,7 @@ function toGvizUrl(sheetName) {
   const params = new URLSearchParams({
     tqx: `responseHandler:${callback};out:json`,
     tq: "select *",
+    _: String(Date.now()),
   });
   if (sheetName) params.set("sheet", sheetName);
   return {
@@ -668,22 +672,39 @@ function loadRowsWithJsonp(sheetName) {
   });
 }
 
-async function loadSheet() {
-  dom.sourceStatus.textContent = "正在重新載入各分類...";
+function profileKey(profile) {
+  return profile ? `${normalize(profile.name)}|${normalize(profile.birthday)}` : "";
+}
+
+function formatSyncTime(date) {
+  return new Intl.DateTimeFormat("zh-TW", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).format(date);
+}
+
+async function loadSheet({ background = false } = {}) {
+  if (state.isSyncing) return;
+  state.isSyncing = true;
+  if (!background) dom.sourceStatus.textContent = "正在重新載入各分類...";
   dom.loadSheetButton.disabled = true;
   try {
     const loadedByCategory = new Map();
     const failed = [];
 
-    for (const category of DEFAULT_CATEGORIES) {
-      try {
-        const rows = await loadRowsWithJsonp(SHEET_NAME_BY_CATEGORY[category] || category);
-        const cases = rowsToCases(rows, category);
-        if (cases.length) loadedByCategory.set(category, cases);
-      } catch {
-        failed.push(category);
-      }
-    }
+    await Promise.all(
+      DEFAULT_CATEGORIES.map(async (category) => {
+        try {
+          const rows = await loadRowsWithJsonp(SHEET_NAME_BY_CATEGORY[category] || category);
+          const cases = rowsToCases(rows, category);
+          if (cases.length) loadedByCategory.set(category, cases);
+        } catch {
+          failed.push(category);
+        }
+      })
+    );
 
     if (!loadedByCategory.size) {
       const rows = await loadRowsWithJsonp("");
@@ -704,6 +725,10 @@ async function loadSheet() {
 
     if (!loaded.length) throw new Error("找不到個案資料");
 
+    const previousLeftKey = profileKey(state.left);
+    const previousRightKey = profileKey(state.right);
+    const previousCategory = state.activeCategory;
+
     state.cases = loaded;
     state.categories = [
       "全部",
@@ -711,18 +736,26 @@ async function loadSheet() {
       ...[...loadedByCategory.keys()].filter((item) => !DEFAULT_CATEGORIES.includes(item)),
       ...state.categories.filter((item) => !["全部", ...DEFAULT_CATEGORIES].includes(item)),
     ];
-    state.activeCategory = "全部";
-    state.left = null;
-    state.right = null;
-    dom.sourceStatus.textContent = `已載入 ${loaded.length} 位個案${failed.length ? `，${failed.join("、")} 尚未讀到` : ""}`;
+    state.activeCategory = state.categories.includes(previousCategory) ? previousCategory : "全部";
+    state.left = loaded.find((profile) => profileKey(profile) === previousLeftKey) || null;
+    state.right = loaded.find((profile) => profileKey(profile) === previousRightKey) || null;
+    state.lastSyncedAt = new Date();
+    dom.sourceStatus.textContent = `已同步 ${loaded.length} 位個案 · ${formatSyncTime(state.lastSyncedAt)}${
+      failed.length ? `（${failed.join("、")} 尚未讀到）` : ""
+    }`;
     render();
   } catch (error) {
-    state.cases = [...sampleCases];
-    state.left = null;
-    state.right = null;
-    dom.sourceStatus.textContent = `載入失敗：${error.message}。目前先顯示示範資料。`;
-    render();
+    if (!state.lastSyncedAt) {
+      state.cases = [...sampleCases];
+      state.left = null;
+      state.right = null;
+      dom.sourceStatus.textContent = `載入失敗：${error.message}。目前先顯示示範資料。`;
+      render();
+    } else {
+      dom.sourceStatus.textContent = `同步暫時失敗，保留 ${formatSyncTime(state.lastSyncedAt)} 的資料`;
+    }
   } finally {
+    state.isSyncing = false;
     dom.loadSheetButton.disabled = false;
   }
 }
@@ -764,7 +797,7 @@ function bindSearch(input, side) {
   });
 }
 
-dom.loadSheetButton.addEventListener("click", loadSheet);
+dom.loadSheetButton.addEventListener("click", () => loadSheet());
 dom.zoomOutButton.addEventListener("click", () => {
   state.zoom = Math.max(0.8, Number((state.zoom - 0.1).toFixed(2)));
   renderViewControls();
@@ -791,3 +824,9 @@ bindSearch(dom.leftSearch, "left");
 bindSearch(dom.rightSearch, "right");
 render();
 loadSheet();
+
+window.setInterval(() => loadSheet({ background: true }), AUTO_SYNC_INTERVAL_MS);
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") loadSheet({ background: true });
+});
+window.addEventListener("focus", () => loadSheet({ background: true }));
