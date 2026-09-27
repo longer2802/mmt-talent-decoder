@@ -441,12 +441,19 @@ textarea:focus {
 }
 
 .search-result-card em {
-  flex: 0 0 auto;
   color: var(--brand);
   font-size: 0.74em;
   font-style: normal;
   font-weight: 900;
-  white-space: nowrap;
+  line-height: 1.35;
+  white-space: normal;
+}
+
+.search-result-cards {
+  display: grid;
+  flex: 0 1 58%;
+  gap: 2px;
+  text-align: right;
 }
 
 .identity {

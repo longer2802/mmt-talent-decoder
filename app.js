@@ -202,7 +202,7 @@ function caseMatches(item, query) {
   const isNumericQuery = /^\d+$/.test(text);
 
   if (isNumericQuery) {
-    return name.includes(text) || birthday.includes(text) || talents.some((card) => card.includes(text));
+    return name.includes(text) || birthday.includes(text) || talents.some((card) => card === text);
   }
 
   const singleCharNameMatch =
@@ -403,7 +403,11 @@ function renderSearchResults(target, query, side) {
         <strong>${profile.name}</strong>
         <small>${profile.category || "未分類"}｜${profile.birthday || "未填生日"}</small>
       </span>
-      <em>天賦 ${formatList(profile.talents)}</em>
+      <span class="search-result-cards">
+        <em>天賦 ${formatList(profile.talents)}</em>
+        <em>導師 ${formatList(profile.mentors)}</em>
+        <em>陰影 ${formatList(profile.shadows)}</em>
+      </span>
     `;
     button.addEventListener("click", () => {
       state[side] = profile;
